@@ -1,0 +1,37 @@
+FROM gcr.io/google-appengine/debian8
+
+ENV DART_VERSION 2.1.0
+
+RUN \
+    apt-get -q update && apt-get install --no-install-recommends -y -q curl git ca-certificates apt-transport-https openssh-client && \
+    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    curl https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list && \
+    curl https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_unstable.list > /etc/apt/sources.list.d/dart_unstable.list && \
+    apt-get update && \
+    apt-get install dart=$DART_VERSION-1 && \
+    apt-get install -y sqlite3 libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV DART_SDK /usr/lib/dart
+ENV PATH $DART_SDK/bin:$PATH
+
+ENV TZ=Asia/Jakarta
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+ADD dart_run.sh /dart_runtime/
+RUN chmod 755 /dart_runtime/dart_run.sh && \
+    chown root:root /dart_runtime/dart_run.sh
+
+# Expose ports for debugger (5858), application traffic (8080)
+# and the observatory (8181)
+EXPOSE 8080 8181 5858
+
+CMD []
+ENTRYPOINT ["/dart_runtime/dart_run.sh"]
+
+WORKDIR /app
+
+ONBUILD ADD pubspec.* /app/
+ONBUILD RUN pub get
+ONBUILD ADD . /app/
+ONBUILD RUN pub get --offline

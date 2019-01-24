@@ -28,10 +28,3 @@ EXPOSE 8080 8181 5858
 
 CMD []
 ENTRYPOINT ["/dart_runtime/dart_run.sh"]
-
-WORKDIR /
-
-ONBUILD ADD pubspec.* /app/
-ONBUILD RUN pub get
-ONBUILD ADD . /app/
-ONBUILD RUN pub get --offline
